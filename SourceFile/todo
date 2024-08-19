@@ -1,0 +1,39 @@
+7-31
+-1.根据路径显示data里的数据  	 @done
+-2.定位功能			 @done
+-3.数组显示			 @done
+-watch窗口右键定位 @done
+8-1
+-折叠定位自动打开 @done
+-whole键值对颜色 @done
+-tree_node悬浮、展开颜色 @done
+-whole窗口右键加入watch @done
+-调整窗口嵌套，使得size调整条、search框等等处于当前窗口最上方 @done
+-watch窗口居中文字 @done
+-搜索默认打开一层dict开关 @done
+-ui自适应，header颜色等等ui美观 @done
+8-2
+-解决路径为字符串导致搜索不到key值为int的键值对的bug @done
+-tree_node节点字符显示 @done
+-搜索时展开搜索到的内容 开关 @done
+-watch、search窗口的dict颜色显示 @done
+-清空高亮标记 @done
+-watch、search窗口文本按下高亮、字典展开高亮 @meibiyao
+-复制、粘贴路径 get_clipboard_text\log_to_clipboard @meibiyao
+
+8-5
+-watch窗口新加入在最上层 @done
+-字体大小设置 @done
+-部分代码整理 @done
+-打包			 @done
+-发布到gitlab @done
+
+8-6
+-增加一个模拟数据变化的测试用例 @ @done
+-字体大小reset @done
+-子窗口添加expand和collapse功能 @done
+
+8-19
+-添加注释 @done
+-优化代码结构 @done
+-移除whole窗口点击文本可以高亮的功能 @done
