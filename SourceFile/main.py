@@ -11,7 +11,7 @@ import sys
 
 dataini = {
     'uid': 10001,
-    'name': "test",
+    (1,2): "test",
     'time': 0,
     'fps': 60,
     'hp_list': [1,2,3,4,5],
@@ -796,7 +796,7 @@ def display(data : dict):
     show_custom_window = True
     io = imgui.get_io()
 
-    new_font = io.fonts.add_font_from_file_ttf("NotoSansSC-Medium.ttf", 20)
+    new_font = io.fonts.add_font_from_file_ttf("SourceFile\\fonts\\NotoSansSC-Medium.ttf", 20)
     impl.refresh_font_texture()
 
     displayDict = DisplayDict(data)
@@ -874,7 +874,7 @@ def debugger():
 if __name__ == "__main__":
     import os
     print(os.getcwd())
-    with open("data.txt", "r") as f:
+    with open("SourceFile\\data.txt", "r") as f:
         my_dict = eval(f.read())
     if use_test_sample:
         display(dataini)
