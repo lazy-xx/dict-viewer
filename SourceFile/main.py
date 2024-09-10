@@ -11,7 +11,7 @@ import sys
 
 dataini = {
     'uid': 10001,
-    (1,2): "test",
+    'Name': "test",
     'time': 0,
     'fps': 60,
     'hp_list': [1,2,3,4,5],
@@ -41,13 +41,18 @@ dataini = {
             },
             'other_inform1': 100,
             'other_inform2': 200,
-            'other_inform3': 400,
+            '199.0.168.177': '199.0.168.177',
         },
     }
 }
 
 class DisplayDict:
     def __init__(self, data:dict):
+        #路径的字段分隔符号。
+        #注意：数据的key值不能包含路径的字段分隔符号，不然会出现该数据无法搜索到和无法加入到watch窗口的情况
+        self.path_field_separator = "@.@"
+        #显示的字段分隔符号
+        self.display_field_separator = "."
         #初始化data，即输入的dict
         self.data = data
         #搜索窗口默认打开dict的深度和标志位
@@ -149,15 +154,28 @@ class DisplayDict:
             #search\whole窗口的大小
             search_and_watch_window_size = (self.main_window_size[0] - imgui.get_cursor_position()[0] - 15, (self.last_child_window_size[1] - 5)/2)
             self.display_search_window(search_and_watch_window_size)
+            imgui.set_next_window_position(self.last_child_window_pos[0], self.last_child_window_pos[1] + self.last_child_window_size[1] + 5) 
             self.display_watch_window(search_and_watch_window_size)
             imgui.pop_style_var(var_num)
             imgui.pop_style_color(color_num)
         imgui.end()
-    
+
+    #设置whole_window_dict_open_status
+    def set_whole_window_dict_open_status(self, data : dict, true_or_false : bool, parent_key : str):
+        for i in data.keys():
+            path = parent_key + str(i)
+            if(type(data[i]) == dict):
+                self.whole_window_dict_open_status[path] = true_or_false
+                self.set_whole_window_dict_open_status(data[i], true_or_false, path + self.path_field_separator)
+            elif(type(data[i]) == list):
+                self.whole_window_dict_open_status[path] = true_or_false
+                for j, value in enumerate(data[i]):
+                    self.set_whole_window_dict_open_status({str(j) : value}, False, path + self.path_field_separator)
+
     def button_collapse_all(self):
         #按钮按下折叠whole窗口所有tree_node
         if imgui.button("CollapseAll"):
-            self.collapse_all_tree_node(self.data)
+            self.set_whole_window_dict_open_status(self.data, False, "")
             self.collapse_all_node_in_whole_window = True
         if imgui.is_item_hovered():
             imgui.set_tooltip("Close all nodes in the whole window")
@@ -165,7 +183,7 @@ class DisplayDict:
     def button_expand_all(self):
         #按钮按下展开whole窗口所有tree_node
         if imgui.button("ExpandAll"):
-            self.expand_all_tree_node(self.data)
+            self.set_whole_window_dict_open_status(self.data, True, "")
             self.expand_all_node_in_whole_window = True
         if imgui.is_item_hovered():
             imgui.set_tooltip("Open all nodes in the whole window")
@@ -278,7 +296,6 @@ class DisplayDict:
                 #所有搜索的字符串列表，每个搜索记录放在一个collapsing_header中
                 self.header_all_search_item()
             imgui.pop_style_var(1)
-            imgui.set_next_window_position(self.last_child_window_pos[0], self.last_child_window_pos[1] + self.last_child_window_size[1] + 5) 
 
     def button_search(self):
         #按钮按下 or 按下回车查询
@@ -372,20 +389,7 @@ class DisplayDict:
         imgui.text(text)
         imgui.separator()
         imgui.set_window_font_scale(1)
-
-    #设置whole_window_dict_open_status
-    def set_whole_window_dict_open_status(self, data : dict, true_or_false : bool, parent_key : str):
-        for i in data.keys():
-            path = parent_key + str(i)
-            if(type(data[i]) == dict):
-                self.whole_window_dict_open_status[path] = true_or_false
-                self.set_whole_window_dict_open_status(data[i], true_or_false, path + '.')
-            elif(type(data[i]) == list):
-                self.whole_window_dict_open_status[path] = true_or_false
-                for j, value in enumerate(data[i]):
-                    self.set_whole_window_dict_open_status({str(j) : value}, False, path + '.')
-            
-    
+  
     #更新whole树的展开情况，使搜索到的结果展开
     def update_whole_window_dict_open_status(self, data : dict, search_str : str, parent_key):
         if(self.search_str == ""):
@@ -395,12 +399,12 @@ class DisplayDict:
             path = parent_key + str(i)
             if(type(data[i]) == dict):
                 self.whole_window_dict_open_status[path] = False
-                self.update_whole_window_dict_open_status(data[i], search_str, path + '.')
+                self.update_whole_window_dict_open_status(data[i], search_str, path + self.path_field_separator)
                 child_opened_situation |= self.whole_window_dict_open_status[path]
             elif(type(data[i]) == list):
                 self.whole_window_dict_open_status[path] = False
                 for j, value in enumerate(data[i]):
-                    self.update_whole_window_dict_open_status({str(j) : value}, search_str, path + '.')
+                    self.update_whole_window_dict_open_status({str(j) : value}, search_str, path + self.path_field_separator)
                     child_opened_situation |= self.whole_window_dict_open_status[path]
             else:
                 if search_str in str(data[i]):
@@ -409,7 +413,7 @@ class DisplayDict:
             if(search_str in str(i)):
                 child_opened_situation = True
         if parent_key != "" and parent_key != None:
-            self.whole_window_dict_open_status[parent_key[:-1]] |= child_opened_situation
+            self.whole_window_dict_open_status[parent_key[:-1 * len(self.path_field_separator)]] |= child_opened_situation
 
     #search窗口搜索结果存储在search_window_display_path_array中
     def update_search_window_display_path_array(self, data : dict, search_str : str, parent_key):
@@ -419,10 +423,10 @@ class DisplayDict:
         for i in data.keys(): 
             path = parent_key + str(i)
             if(type(data[i]) == dict):       
-                self.update_search_window_display_path_array(data[i], search_str, path + '.')  
+                self.update_search_window_display_path_array(data[i], search_str, path + self.path_field_separator)  
             elif(type(data[i]) == list):
                 for j, value in enumerate(data[i]):
-                    self.update_search_window_display_path_array({str(j) : value}, search_str, path + '.')  
+                    self.update_search_window_display_path_array({str(j) : value}, search_str, path + self.path_field_separator)  
             else:
                 if self.search_str in str(data[i]) and path not in self.search_window_display_path_array[-1]:
                     self.search_window_display_path_array[-1].append(path)
@@ -439,7 +443,7 @@ class DisplayDict:
             if(type(data[i]) == dict or type(data[i]) == list):
                 #判断tree_node节点是否需要展开
                 if (self.search_flag == True and self.is_search_open_tree_node == True) or self.collapse_all_node_in_whole_window or self.expand_all_node_in_whole_window:
-                        imgui.set_next_item_open(self.whole_window_dict_open_status[path] )
+                    imgui.set_next_item_open(self.whole_window_dict_open_status[path] )
                 if self.is_located == True:
                     if depth < len(self.need_locate_path_split) and str(i) == self.need_locate_path_split[depth]:
                         imgui.set_next_item_open(True)
@@ -462,10 +466,10 @@ class DisplayDict:
                 #递归内部内容，同时tree_node弹栈
                 if opened:
                     if type(data[i]) == dict:
-                        self.display_whole_content(data[i], path + '.', depth + 1)    
+                        self.display_whole_content(data[i], path + self.path_field_separator, depth + 1)    
                     elif type(data[i]) == list:
                         for j, value in enumerate(data[i]):
-                            self.display_whole_content({str(j) : value}, path + '.', depth + 1)
+                            self.display_whole_content({str(j) : value}, path + self.path_field_separator, depth + 1)
                     imgui.tree_pop()
             else:  
                 #绘制键值对文本
@@ -477,7 +481,6 @@ class DisplayDict:
                 #鼠标悬浮或者需要绘制高亮后执行
                 self.whole_execute_if_hoverd_or_hl(path, str(i), str(data[i]), depth)
 
-    
     def whole_window_right_click_event(self, path):
         #右键按下事件，加入到watch窗口
         if imgui.begin_popup_context_item(path):
@@ -530,8 +533,7 @@ class DisplayDict:
             if path_value == None:
                 path_array.remove(path)
                 continue
-            self.display_search_or_watch_dict(1, {path : path_value}, "", 0, search_str)
-
+            self.display_search_or_watch_dict(1, {path : path_value}, "", 0, 0, search_str)
 
     #watch窗口内容的展示
     def display_watch_content(self, path_array):
@@ -541,13 +543,17 @@ class DisplayDict:
             if path_value == None:
                 path_array.remove(path)
                 continue
-            self.display_search_or_watch_dict(2, {path : path_value}, "", 0)
+            self.display_search_or_watch_dict(2, {path : path_value}, "", 0, 0)
         self.expand_all_node_in_watch_window = False
         self.collapse_all_node_in_watch_window = False
 
-
     #绘制search窗口和watch窗口下的dict
-    def display_search_or_watch_dict(self, search_or_watch_mode, path_data, parent_key : str, depth, search_str = None):
+    def display_search_or_watch_dict(self, 
+                                     search_or_watch_mode, 
+                                     path_data, parent_key : str, 
+                                     depth, 
+                                     cen, 
+                                     search_str = None):
         for i in path_data.keys():
             path = parent_key + str(i)
             path_value = path_data[i]
@@ -555,32 +561,37 @@ class DisplayDict:
                 imgui.unindent(7)
                 #搜索或者调整self.default_opened_depth时会影响search_window的dict展开层数
                 if search_or_watch_mode == 1 and (self.search_flag == True or self.default_opened_depth_changed == True):
-                    if depth < self.default_opened_depth:
-                        imgui.set_next_item_open(True)
-                    else:
-                        imgui.set_next_item_open(False)
+                    imgui.set_next_item_open(cen < self.default_opened_depth)
                 #search_or_watch_mode==2表示watch窗口，两个按钮会影响是否展开
                 if search_or_watch_mode == 2:
-                    if self.expand_all_node_in_watch_window == True:
-                        imgui.set_next_item_open(True)
-                    if self.collapse_all_node_in_watch_window == True:
-                        imgui.set_next_item_open(False)
+                    imgui.set_next_item_open(self.expand_all_node_in_watch_window or self.collapse_all_node_in_watch_window)
                 #绘制tree_node节点
-                changed, opened = self.path_tree_node_display(path, str(i), search_or_watch_mode, depth)
+                removed, opened = self.path_tree_node_display(path, str(i), search_or_watch_mode, depth, search_str)
                 imgui.indent(7)
-                if changed and opened and search_or_watch_mode == 2:
+                #如果该tree_node被移除了，则不递归子节点了
+                if removed and opened and search_or_watch_mode == 2:
                     imgui.tree_pop()   
                     continue
+                #递归子节点，这里的depth = len(path.split(self.path_field_separator))是为了正确显示颜色
                 if opened and type(path_value) == dict:
-                    self.display_search_or_watch_dict(search_or_watch_mode, path_value, path + '.', depth + 1, search_str)
+                    self.display_search_or_watch_dict(search_or_watch_mode,
+                                                      path_value, path + self.path_field_separator,
+                                                      len(path.split(self.path_field_separator)),
+                                                      cen + 1,
+                                                      search_str)
                     imgui.tree_pop()   
                 elif opened and type(path_value) == list:
                     for j, value in enumerate(path_value):
-                        self.display_search_or_watch_dict(search_or_watch_mode, {str(j) : value}, path + '.', depth + 1, search_str)
-                    imgui.tree_pop()       
+                        self.display_search_or_watch_dict(search_or_watch_mode,
+                                                          {str(j) : value},
+                                                          path + self.path_field_separator,
+                                                          len(path.split(self.path_field_separator)),
+                                                          cen + 1,
+                                                          search_str)
+                    imgui.tree_pop()
             else:
                 #绘制带颜色、搜索红色的路径字符串
-                hl_pos, hl_width, hl_height = self.path_text_display(str(i), str(path_value), search_str)
+                hl_pos, hl_width, hl_height = self.path_text_display(str(i), str(path_value), depth, search_str)
                 #右键事件
                 if search_or_watch_mode == 2 and depth == 0:
                     self.watch_window_right_click_event(path)
@@ -592,29 +603,36 @@ class DisplayDict:
                     imgui.set_next_window_position(*hl_pos)
                     with imgui.begin_child(path, width = hl_width, height = hl_height, flags = imgui.WINDOW_NO_MOUSE_INPUTS) :
                         #绘制字符串
-                        self.path_text_display(str(i), str(path_value), search_str)
+                        self.path_text_display(str(i), str(path_value), depth, search_str)
                     imgui.pop_style_color(1)
 
     #路径树节点的显示
-    def path_tree_node_display(self, path, text, window_flag, depth, flags = 0):
-        nodes = text.split('.')
-        opened = imgui.tree_node('##' + str(path), flags = flags | imgui.TREE_NODE_SPAN_AVAILABLE_WIDTH)
-        changed = False
+    def path_tree_node_display(self, path, text, window_flag, depth, search_str = None):
+        nodes = text.split(self.path_field_separator)
+        opened = imgui.tree_node('##' + str(path), flags = imgui.TREE_NODE_SPAN_AVAILABLE_WIDTH)
+        removed = False
         if window_flag == 2 and depth == 0:
-            changed = self.watch_window_right_click_event(path)
+            removed = self.watch_window_right_click_event(path)
         else:
             self.search_window_right_click_event(path)
         imgui.same_line()
-        for i, node in enumerate(nodes):
-            imgui.push_style_color(imgui.COLOR_TEXT, *self.color_list[i % 3])
-            imgui.text(node)
-            if i < len(nodes) - 1:
+        for i, node in enumerate(nodes):      
+            color_index = (i + depth) % 3
+            if i == len(nodes) - 1:
+                #绘制的字符串内部包含搜索的字符串，颜色变为红色
+                if search_str != None and search_str in node:
+                    color_index = 3
+                imgui.push_style_color(imgui.COLOR_TEXT, *self.color_list[color_index])
+                imgui.text(node)
+            else:
+                imgui.push_style_color(imgui.COLOR_TEXT, *self.color_list[color_index])
+                imgui.text(node)
                 imgui.same_line(spacing = 0)
-                imgui.text(".")
+                imgui.text(self.display_field_separator)
                 imgui.same_line(spacing = 0)
             imgui.pop_style_color(1)
         
-        return changed, opened
+        return removed, opened
 
     def search_window_right_click_event(self, path : str):
         #右键按下事件，加入到watch窗口、定位
@@ -628,30 +646,30 @@ class DisplayDict:
             if changed_locate:
                 self.is_located = True
                 self.need_locate_path = path
-                self.need_locate_path_split = path.split('.')
+                self.need_locate_path_split = path.split(self.path_field_separator)
                 pass
             imgui.end_popup()
 
     def watch_window_right_click_event(self, path : str):
         #右键移除
         if imgui.begin_popup_context_item(path):
-            #移除
-            changed, _ = imgui.selectable("Remove")
-            if changed:
+            #移除标志。其实就是selectable组件是否被点击，被点击则说明移除了
+            removed, _ = imgui.selectable("Remove")
+            if removed:
                 self.watch_window_display_path_array = [x for x in self.watch_window_display_path_array if x != path]
             #定位
             changed_locate, _ = imgui.selectable("Locate in the dict tree")
             if changed_locate:
                 self.is_located = True
                 self.need_locate_path = path
-                self.need_locate_path_split = path.split('.')
+                self.need_locate_path_split = path.split(self.path_field_separator)
                 pass
             imgui.end_popup()
-            return changed
+            return removed
 
     def get_value_form_path(self, path : str):
         data = self.data
-        nodes = path.split('.')
+        nodes = path.split(self.path_field_separator)
         for node in nodes:
             if type(data) == dict:
                 if(data.get(str(node)) != None):
@@ -677,12 +695,12 @@ class DisplayDict:
         return data
         
     #路径文本的显示，返回该文本的位置、宽高
-    def path_text_display(self, key : str, value : str, search_str = None) -> float:
+    def path_text_display(self, key : str, value : str, depth, search_str = None) -> float:
         with imgui.begin_group():
             imgui.push_style_var(imgui.STYLE_ITEM_SPACING, (1, 4))
-            str_list = key.split(".")
+            str_list = key.split(self.path_field_separator)
             for i, s in enumerate(str_list):
-                color_index = i%3
+                color_index = (i + depth)%3
                 if(i == len(str_list) - 1):
                     if search_str != None and search_str in s:
                         color_index = 3
@@ -690,11 +708,11 @@ class DisplayDict:
                     imgui.text(s)
                 else:
                     imgui.push_style_color(imgui.COLOR_TEXT, *self.color_list[color_index])
-                    imgui.text(s + '.')
+                    imgui.text(s + self.display_field_separator)
                 imgui.same_line()
                 imgui.pop_style_color(1)
             imgui.pop_style_var(1)
-
+            #绘制value文本
             imgui.same_line(spacing = 1)
             imgui.text(' : ')
             imgui.same_line(spacing = 1)
@@ -714,16 +732,6 @@ class DisplayDict:
         return origin_pos, text_width, text_height
 
             
-    #折叠所有字典节点
-    def collapse_all_tree_node(self, data : dict):       
-        self.set_whole_window_dict_open_status(data, False, "")
-    
-    #设置self.whole_window_dict_open_status，设置全为True。
-    def expand_all_tree_node(self, data):
-        self.set_whole_window_dict_open_status(data, True, "")
-    
-
-
 def impl_glfw_init():
     width, height = 1280, 720
     window_name = "minimal ImGui/GLFW3 example"
@@ -822,7 +830,6 @@ def display(data : dict):
             else:
                 displayDict.data = data
             
-
         gl.glClearColor(1.0, 1.0, 1.0, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
@@ -872,11 +879,6 @@ def debugger():
         imgui.tree_pop()
 
 if __name__ == "__main__":
-    import os
-    print(os.getcwd())
     with open("SourceFile\\data.txt", "r") as f:
         my_dict = eval(f.read())
-    if use_test_sample:
-        display(dataini)
-    else:
         display(my_dict)

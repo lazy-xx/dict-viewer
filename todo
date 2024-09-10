@@ -37,3 +37,9 @@
 -添加注释 @done
 -优化代码结构 @done
 -移除whole窗口点击文本可以高亮的功能 @done
+
+-右键弹出窗口后，在父窗口滚动滚轮关闭该窗口
+-key值包含'.'导致bug: get_value_form_path无法正确使用
+-发现键值对中包含如下键值对
+'epic_moments': '[{"SessionName": "1026101126", "LoadingHeroIDs": []}, {"SessionName": "1026101126", "LoadingHeroIDs": []}]'
+该键值对的value现阶段无法解析成数组类型, 因为它被包装成了字符串类型数据
